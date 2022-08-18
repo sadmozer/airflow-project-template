@@ -41,7 +41,7 @@ Open in a browser the following url: `http://localhost:8080` and enter as user:p
 
 **Upload an Airflow DAG**
 
-Put the dag in the `airflow-project-template/src` folder.
+Put the DAG file inside the `airflow-project-template/src` folder.
 
 **Restart Airflow**
 ```
