@@ -1,0 +1,14 @@
+{
+    "google_cloud_default": {
+        "conn_type": "google_cloud_platform",
+        "description": "",
+        "extra": {
+            "extra__google_cloud_platform__key_path": "/tmp/credentials.json",
+            "extra__google_cloud_platform__key_secret_name": "",
+            "extra__google_cloud_platform__keyfile_dict": "",
+            "extra__google_cloud_platform__num_retries": 0,
+            "extra__google_cloud_platform__project": "my-project-id",
+            "extra__google_cloud_platform__scope": "https://www.googleapis.com/auth/cloud-platform"
+        }
+    }
+}

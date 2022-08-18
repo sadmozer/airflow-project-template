@@ -1,0 +1,6 @@
+/**/__pycache__
+app/gcp
+app/data
+logs
+plugins
+.venv
