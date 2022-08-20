@@ -8,8 +8,8 @@ from airflow.providers.google.cloud.operators.bigquery import (
     BigQueryCreateEmptyDatasetOperator
 )
 
-PROJECT_ID = "formazione-niccolo-cardelli"
-DATASET_ID = f"my_dataset"
+PROJECT_ID = "my-project-id"
+DATASET_ID = f"my-dataset"
 
 with models.DAG(
     dag_id="bigquery_operator_dag",

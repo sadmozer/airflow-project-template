@@ -8,26 +8,20 @@ from airflow import models
 from airflow.operators.python import PythonOperator
 
 PROJECT_ID = "my-project-id"
-DATASET_ID = f"my_dataset"
+DATASET_ID = "my-dataset"
+TABLE_ID = "my-table" 
 
 def query_fun():
     from google.cloud import bigquery
 
     client = bigquery.Client()
 
-    query = """
-        SELECT name, SUM(number) as total_people
-        FROM `bigquery-public-data.usa_names.usa_1910_2013`
-        WHERE state = 'TX'
-        GROUP BY name, state
-        ORDER BY total_people DESC
-        LIMIT 20
+    query = f"""
+        SELECT *
+        FROM `{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}`
+        LIMIT 1000
     """
     query_job = client.query(query)
-
-    print("The query data:")
-    for row in query_job:
-        print("name={}, count={}".format(row[0], row["total_people"]))
 
 with models.DAG(
     dag_id="bigquery_client_dag",

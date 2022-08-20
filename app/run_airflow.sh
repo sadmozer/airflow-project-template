@@ -30,7 +30,7 @@ echo "Stopping Airflow containers.."
 docker-compose down -v
 
 echo "Setting up local folders.."
-echo -e "AIRFLOW_UID=$(id -u)" > .env
+# echo -e "AIRFLOW_UID=$(id -u)" > .env
 mkdir -p ../logs 
 mkdir -p ../plugins  
 
