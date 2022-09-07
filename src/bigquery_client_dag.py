@@ -5,11 +5,11 @@ import os
 from datetime import datetime
 
 from airflow import models
-from airflow.operators.python import PythonOperator
+from airflow.operators.python_operator import PythonOperator
 
 PROJECT_ID = "my-project-id"
-DATASET_ID = "my-dataset"
-TABLE_ID = "my-table" 
+DATASET_ID = "my_dataset"
+TABLE_ID = "my_table" 
 
 def query_fun():
     from google.cloud import bigquery
@@ -28,7 +28,7 @@ with models.DAG(
     schedule_interval=None,
     start_date=datetime(2021, 1, 1),
     catchup=False,
-    tags=["bigquery"],
+    tags=["airflow_1"],
 ) as dag:
 
     run_query = PythonOperator(task_id="query", python_callable=query_fun)

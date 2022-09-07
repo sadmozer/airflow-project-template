@@ -1,0 +1,149 @@
+version: "3.8"
+services:
+  airflow:
+    image: bitnami/airflow:${AIRFLOW_VERSION}
+    ports:
+      - "8080:8080"
+    environment:
+      - AIRFLOW_FERNET_KEY=KjzeRCRUAGgDj_gbbd1lGg9UD87A0N_mQAsyQK4tUP8=
+      - AIRFLOW_USERNAME=airflow
+      - AIRFLOW_PASSWORD=airflow
+      - AIRFLOW_DATABASE_HOST=postgres
+      - AIRFLOW_DATABASE_NAME=airflow
+      - AIRFLOW_DATABASE_USERNAME=airflow
+      - AIRFLOW_DATABASE_PASSWORD=airflow
+      - AIRFLOW_EXECUTOR=CeleryExecutor
+      - AIRFLOW_LOAD_EXAMPLES=no
+      - AIRFLOW_CONN_EXAMPLE_DB=postgres://example:example@postgres:5432/example
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
+      - OPENLINEAGE_URL=http://marquez:5000
+    volumes:
+      - ../src:/opt/bitnami/airflow/dags
+      - ../requirements.txt:/bitnami/python/requirements.txt
+      - ./gcp/credentials.json:/tmp/credentials.json
+      - ./airflow/conn.json:/tmp/conn.json
+    depends_on:
+    - redis
+    - postgres
+
+  airflow_scheduler:
+    image: bitnami/airflow-scheduler:${AIRFLOW_VERSION}
+    environment:
+      - AIRFLOW_FERNET_KEY=KjzeRCRUAGgDj_gbbd1lGg9UD87A0N_mQAsyQK4tUP8=
+      - AIRFLOW_DATABASE_HOST=postgres
+      - AIRFLOW_DATABASE_NAME=airflow
+      - AIRFLOW_DATABASE_USERNAME=airflow
+      - AIRFLOW_DATABASE_PASSWORD=airflow
+      - AIRFLOW_EXECUTOR=CeleryExecutor
+      - AIRFLOW_LOAD_EXAMPLES=no
+      - AIRFLOW_CONN_EXAMPLE_DB=postgres://example:example@postgres:5432/example
+      - AIRFLOW_WEBSERVER_HOST=airflow
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
+      - OPENLINEAGE_URL=http://marquez:5000
+    volumes:
+      - ../src:/opt/bitnami/airflow/dags
+      - ../requirements.txt:/bitnami/python/requirements.txt
+      - ./gcp/credentials.json:/tmp/credentials.json
+      - ./airflow/conn.json:/tmp/conn.json
+      - ./airflow/airflow_healthcheck.py:/tmp/airflow_healthcheck.py
+      - ./marquez/wait-for-it.sh:/opt/bitnami/scripts/airflow-scheduler/wait-for-it.sh
+    restart: always
+    depends_on:
+    - redis
+    - postgres
+    - airflow
+    entrypoint: ["/opt/bitnami/scripts/airflow-scheduler/wait-for-it.sh", "-t", "30", "airflow:8080", "--", "/opt/bitnami/scripts/airflow-scheduler/entrypoint.sh"]
+    command: "/opt/bitnami/scripts/airflow-scheduler/run.sh"
+    healthcheck:
+      test: ["CMD", "/opt/bitnami/airflow/venv/bin/python", "/tmp/airflow_healthcheck.py"]
+      interval: 10s
+      retries: 10
+  airflow_worker:
+    image: bitnami/airflow-worker:${AIRFLOW_VERSION}
+    environment:
+      - AIRFLOW_FERNET_KEY=KjzeRCRUAGgDj_gbbd1lGg9UD87A0N_mQAsyQK4tUP8=
+      - AIRFLOW_DATABASE_HOST=postgres
+      - AIRFLOW_DATABASE_NAME=airflow
+      - AIRFLOW_DATABASE_USERNAME=airflow
+      - AIRFLOW_DATABASE_PASSWORD=airflow
+      - AIRFLOW_EXECUTOR=CeleryExecutor
+      - AIRFLOW_LOAD_EXAMPLES=no
+      - AIRFLOW_CONN_EXAMPLE_DB=postgres://example:example@postgres:5432/example
+      - AIRFLOW_WEBSERVER_HOST=airflow
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
+      - OPENLINEAGE_URL=http://marquez:5000
+    volumes:
+      - ../src:/opt/bitnami/airflow/dags
+      - ../requirements.txt:/bitnami/python/requirements.txt
+      - ./gcp/credentials.json:/tmp/credentials.json
+      - ./airflow/conn.json:/tmp/conn.json
+    depends_on:
+    - redis
+    - postgres
+    - airflow_scheduler
+
+  marquez:
+    image: marquezproject/marquez:latest
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    depends_on:
+      - postgres
+      - airflow_worker
+    volumes:
+      - ./marquez/wait-for-it.sh:/usr/src/app/wait-for-it.sh
+    entrypoint: ["/usr/src/app/wait-for-it.sh", "postgres:5432", "--", "./entrypoint.sh"]
+    # Enables SQL statement logging (see: https://www.postgresql.org/docs/12/runtime-config-logging.html#GUC-LOG-STATEMENT)
+    # command: ["postgres", "-c", "log_statement=all"]
+
+  marquez_web:
+    image: marquezproject/marquez-web:latest
+    environment:
+      - MARQUEZ_HOST=marquez
+      - MARQUEZ_PORT=5000
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+    depends_on:
+      - marquez
+      - airflow_worker
+
+  postgres:
+    image: bitnami/postgresql:12.1.0
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - AIRFLOW_USER=airflow
+      - AIRFLOW_PASSWORD=airflow
+      - AIRFLOW_DB=airflow
+      - MARQUEZ_USER=marquez
+      - MARQUEZ_PASSWORD=marquez
+      - MARQUEZ_DB=marquez
+      - EXAMPLE_USER=example
+      - EXAMPLE_PASSWORD=example
+      - EXAMPLE_DB=example
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - ./marquez/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  redis:
+    image: bitnami/redis:6.0.6
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    restart: always

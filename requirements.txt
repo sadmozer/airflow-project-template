@@ -1,1 +1,13 @@
+pip==21.3.1
+setuptools==60.2.0
+wheel==0.37.1
+apache-airflow[google,celery]==1.10.15
+pytest==7.1.2
+pylint==2.13.9
+pylint-airflow==0.1.0a1
+six~=1.16.0
+markupsafe==2.0.1
+sqlfluff
 openlineage-airflow==0.12.0
+requests
+apache-airflow-backport-providers-google

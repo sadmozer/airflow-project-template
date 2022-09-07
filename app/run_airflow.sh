@@ -27,7 +27,7 @@ done
 set -- "${POSITIONAL_ARGS[@]}"
 
 echo "Stopping Airflow containers.."
-docker-compose down -v
+docker-compose down -v --remove-orphans
 
 echo "Setting up local folders.."
 # echo -e "AIRFLOW_UID=$(id -u)" > .env
@@ -40,20 +40,27 @@ if [[ "$BUILD" = "YES" ]]; then
 fi
 
 echo "(Re)starting Airflow containers.."
-docker-compose up airflow-init -d
 docker-compose up -d
 
-while [ "$(docker ps -a | grep app-airflow-webserver-1)" ] && [ "$(docker inspect -f {{.State.Health.Status}} app-airflow-webserver-1)" != "healthy" ]
+while [ "$(docker ps -a | grep app-airflow_scheduler-1)" ] && [ "$(docker inspect -f {{.State.Health.Status}} app-airflow_scheduler-1)" != "healthy" ]
 do 
-  echo "Waiting for Airflow to start.." && sleep 2
+  echo "Waiting for Airflow to start.." && sleep 5
 done
 
-if docker exec -t app-airflow-webserver-1 airflow connections get google_cloud_default | grep -q 'Connection not found.'; then
-  echo "Creating BigQuery connection.."
-  docker exec -it app-airflow-webserver-1 bash -c "python /tmp/extract_project_id.py "
-  docker exec -it app-airflow-webserver-1 bash -c "airflow connections import /tmp/conn.json"
+if docker exec -t app-airflow-1 airflow version | grep 2.3; then
+  if docker exec -t app-airflow-1 airflow connections get google_cloud_default | grep -q 'Connection not found.'; then
+    echo "Creating BigQuery connection.."
+    docker exec -it app-airflow-1 bash -c "python /tmp/extract_project_id.py "
+    docker exec -it app-airflow-1 bash -c "airflow connections import /tmp/conn.json"
+  fi
+elif docker exec -t app-airflow-1 airflow version | grep 1.10.15; then
+  # if docker exec -t app-airflow-1 airflow connections get google_cloud_default | grep -q 'Connection not found.'; then
+  #   echo "Creating BigQuery connection.."
+  #   docker exec -it app-airflow-1 bash -c "python /tmp/extract_project_id.py "
+  #   docker exec -it app-airflow-1 bash -c "airflow connections import /tmp/conn.json"
+  # fi
+  echo "TODO: automatic variables & connections!"
 fi
-
 echo "Airflow has started correctly!"
 echo "To access the Airflow UI open this url in a browser:"
 echo -e "\\thttp://localhost:8080"

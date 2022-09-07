@@ -261,5 +261,5 @@ services:
 networks:
   local:
     driver: bridge
-volumes:
-  postgres-db-volume:
+# volumes:
+#   postgres-db-volume:

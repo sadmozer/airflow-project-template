@@ -9,7 +9,7 @@ from airflow.providers.google.cloud.operators.bigquery import (
 )
 
 PROJECT_ID = "my-project-id"
-DATASET_ID = f"my-dataset"
+DATASET_ID = f"my_dataset"
 
 with models.DAG(
     dag_id="bigquery_operator_dag",

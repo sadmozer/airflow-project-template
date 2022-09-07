@@ -7,7 +7,7 @@
             "extra__google_cloud_platform__key_secret_name": "",
             "extra__google_cloud_platform__keyfile_dict": "",
             "extra__google_cloud_platform__num_retries": 0,
-            "extra__google_cloud_platform__project": "my-project-id",
+            "extra__google_cloud_platform__project": "formazione-niccolo-cardelli",
             "extra__google_cloud_platform__scope": "https://www.googleapis.com/auth/cloud-platform"
         }
     }
